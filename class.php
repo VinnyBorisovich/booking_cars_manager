@@ -9,7 +9,12 @@ if (!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true) {
 
 class CarsBooking extends CBitrixComponent
 {
-    private array $timeForBooking = array();
+    private array $timeForBooking = [];
+
+    /**
+     * Принимаем временной интервал для бронирования
+     * @return bool
+     */
 
     private function getTimeForBooking(): bool
     {
@@ -21,11 +26,22 @@ class CarsBooking extends CBitrixComponent
         } else return false;
     }
 
+    /**
+     * Получаем список доступных для пользователя авто без учёта их занятости.
+     * @return array
+     */
     private function getAvailableCarsForUser(): array
     {
-        $arAvailableCarsCategory = array();
-        $arAvailableCars = array();
-        $res = CIBlockSection::GetList(array("SORT" => "ASC"), array("IBLOCK_ID" => $this->arParams["IBLOCK_ID"], "SECTION_ID" => false), false, array("ID", "CODE", "NAME"), false);
+        $arAvailableCarsCategory = [];
+        $arAvailableCars = [];
+        $res = CIBlockSection::GetList(
+            ["SORT" => "ASC"],
+            ["IBLOCK_ID" => $this->arParams["IBLOCK_ID"], "SECTION_ID" => false],
+            false,
+            ["ID", "CODE", "NAME"],
+            false
+        );
+
         while ($result = $res->GetNext()) {
             if (CIBlockSectionRights::UserHasRightTo($this->arParams["IBLOCK_ID"], $result["ID"],
                 "section_element_bind")) {
@@ -34,7 +50,13 @@ class CarsBooking extends CBitrixComponent
         }
 
         foreach ($arAvailableCarsCategory as $category) {
-            $arCars = CIBlockSection::GetList(array("SORT" => "ASC"), array("IBLOCK_ID" => $this->arParams["IBLOCK_ID"], "SECTION_ID" => $category["ID"]), false, array(), false);
+            $arCars = CIBlockSection::GetList(
+                ["SORT" => "ASC"],
+                ["IBLOCK_ID" => $this->arParams["IBLOCK_ID"], "SECTION_ID" => $category["ID"]],
+                false,
+                [],
+                false
+            );
             while ($car = $arCars->GetNext()) {
                 $car["CAR_CLASS"] = $category["NAME"];
                 $arAvailableCars[] = $car;
@@ -43,6 +65,10 @@ class CarsBooking extends CBitrixComponent
         return $arAvailableCars;
     }
 
+    /**
+     * @throws \Bitrix\Main\LoaderException
+     * @throws Exception
+     */
     private function checkModules(): void
     {
         if (!Loader::includeModule("iblock")) {
@@ -50,10 +76,22 @@ class CarsBooking extends CBitrixComponent
         }
     }
 
+    /**
+     * Проверка конкретного авто на занятость в заданном промежутке времени
+     * @param $section_id
+     * @param array $timeInterval
+     * @return bool
+     */
     private function isNonOccurrenceCar($section_id, array $timeInterval): bool
     {
-        $arrElement = CIBlockElement::GetList(array("SORT" => "ASC"), array("SECTION_ID" => $section_id),
-            false, false, array("ID", "NAME"));
+        $arrElement = CIBlockElement::GetList(
+            ["SORT" => "ASC"],
+            ["SECTION_ID" => $section_id],
+            false,
+            false,
+            ["ID", "NAME"]
+        );
+
         while ($element = $arrElement->GetNext()) {
             if (!$this->isNonOccurenceElementBooking($this->arParams["IBLOCK_ID"], $element["ID"], $timeInterval)) {
                 return false;
@@ -62,13 +100,21 @@ class CarsBooking extends CBitrixComponent
         return true;
     }
 
+    /**
+     * @param $iblockId
+     * @param $elementId
+     * @param $timeInterval
+     * @return bool
+     */
     private function isNonOccurenceElementBooking($iblockId, $elementId, $timeInterval): bool
     {
         $interval = array();
         $arProperty = CIBlockElement::GetProperty($iblockId, $elementId, array("sort" => "asc"), array());
+
         while ($property = $arProperty->GetNext()) {
             $interval[] = strtotime($property["VALUE"]);
         }
+
         $interval = $this->checkTimeInterval($interval);
         if ($timeInterval[1] < $interval[0] || $timeInterval[0] > $interval[1]) {
             return true;
@@ -77,16 +123,25 @@ class CarsBooking extends CBitrixComponent
         }
     }
 
+    /**
+     * @param array $timeInterval
+     * @return array
+     */
     private function checkTimeInterval(array $timeInterval): array
     {
         if ($timeInterval[0] > $timeInterval[1]) {
             $t = $timeInterval[0];
             $timeInterval[0] = $timeInterval[1];
             $timeInterval[1] = $t;
+
             return $timeInterval;
         } else return $timeInterval;
     }
 
+    /**
+     * готовим arResult
+     * @return void
+     */
     public function getResult(): void
     {
         $carsForResult = array();
@@ -98,6 +153,7 @@ class CarsBooking extends CBitrixComponent
         }
         $this->arResult["ITEMS"] = $carsForResult;
     }
+
 
     public function executeComponent(): void
     {
