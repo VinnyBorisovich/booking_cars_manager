@@ -4,7 +4,7 @@ namespace Sprint\Migration;
 
 class M20231204221227_add_booking_time_interval extends Version
 {
-    protected $description   = "";
+    protected $description   = "Добавляем элементы с интервалами бронирования для авто";
     protected $moduleVersion = "4.6.1";
 
     /**

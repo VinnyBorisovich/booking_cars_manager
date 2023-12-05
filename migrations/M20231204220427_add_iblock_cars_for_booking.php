@@ -5,7 +5,7 @@ namespace Sprint\Migration;
 
 class M20231204220427_add_iblock_cars_for_booking extends Version
 {
-    protected $description = "";
+    protected $description = "Добавляем ИБ";
 
     protected $moduleVersion = "4.6.1";
 
